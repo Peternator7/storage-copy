@@ -19,6 +19,11 @@ library
   build-depends:       base >= 4.7 && < 5
                      , directory
                      , transformers
+                     , time
+                     , req
+                     , aeson
+                     , text
+                     , bytestring
   default-language:    Haskell2010
 
 executable storage-copy-exe
@@ -27,7 +32,6 @@ executable storage-copy-exe
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
                      , storage-copy
-                     , transformers
   default-language:    Haskell2010
 
 test-suite storage-copy-test

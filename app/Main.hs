@@ -1,7 +1,6 @@
 module Main where
 
 import qualified Lib
-import Control.Monad.Trans.Maybe
 
 main :: IO ()
 main = do 
