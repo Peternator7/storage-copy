@@ -13,7 +13,7 @@ import Data.List.Split (splitOn)
 import Data.Traversable (forM)
 import Data.Time.Clock (getCurrentTime)
 import Data.Time.Format (formatTime, defaultTimeLocale)
-import System.Directory (listDirectory, doesFileExist, makeAbsolute)
+import System.Directory (listDirectory, doesFileExist, makeAbsolute, withCurrentDirectory, getCurrentDirectory)
 
 -- Needed for http requests.
 import Control.Exception (throwIO, try)
@@ -29,18 +29,23 @@ instance MonadHttp IO where
 getContainerName :: String -> B.ByteString
 getContainerName = B.pack . (map toLower) . last . (splitOn "/")
 
+isHidden :: String -> Bool
+isHidden = ('.' ==) . head
+
 crawlDir :: B.ByteString -> B.ByteString -> B.ByteString -> IO ()
-crawlDir path storage sas = do 
-    p <- makeAbsolute . B.unpack $ path
-    files <- recurseDir p
-    let container = getContainerName p
-    (try $ createContainer container storage sas) :: IO (Either HttpException ())
-    forM_ files (\file -> uploadFile p file container storage sas)
+crawlDir path storage sas = 
+    withCurrentDirectory (B.unpack $ path) (do
+        p <- getCurrentDirectory
+        files <- recurseDir p
+        let container = getContainerName p
+        (try $ createContainer container storage sas) :: IO (Either HttpException ())
+        forM_ files (\file -> uploadFile p file container storage sas))
 
 recurseDir :: String -> IO [String]
 recurseDir path = do
     dirs <- listDirectory path
-    let absolutePaths = map (\file -> path ++ "/" ++ file) dirs 
+    -- Filter out any paths starting with a '.'
+    let absolutePaths = map (\file -> path <> "/" <> file) . filter (not . isHidden) $ dirs 
     mapM recursePath absolutePaths >>= return . Prelude.concat
 
 recursePath :: String -> IO [String]
